@@ -1,0 +1,6 @@
+pykrx
+pandas
+numpy
+scipy
+matplotlib
+finance-datareader
