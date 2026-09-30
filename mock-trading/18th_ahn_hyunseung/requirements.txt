@@ -1,0 +1,7 @@
+pandas
+numpy
+pyarrow
+duckdb
+openpyxl
+matplotlib
+finance-datareader
