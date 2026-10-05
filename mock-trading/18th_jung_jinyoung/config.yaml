@@ -1,0 +1,75 @@
+paths:
+  raw: data/raw
+  processed: data/processed
+  sector_file: sector.txt        # 대회 GICS 분류표
+  outputs: outputs
+  rscript: C:/Program Files/R/R-4.5.1/bin/Rscript.exe
+
+data:
+  fin_lag_days: 45               # 1~3분기 공시 지연
+  fin_lag_days_q4: 90            # 4분기(연간) 공시 지연
+  halt_if_zero_value: true       # 거래대금 0 = 거래정지로 간주
+
+universe:
+  min_mcap: 1.0e+11              # 1,000억
+  min_value_5d: 3.0e+9           # 5일 평균 거래대금 30억 초과
+  min_listed_days: 6             # 상장 후 6영업일 이후
+
+limits:
+  stock_max: 0.15
+  stock_exceptions: {A005930: 0.40, A000660: 0.30}
+  sector_mult: 2.0               # 섹터 ≤ 시장 섹터 비중 × 2
+  sector_small_thresh: 0.05      # 시장 비중 5% 이하면
+  sector_small_cap: 0.10         #   10%까지 허용
+  smallcap_mcap: 1.0e+12         # 시총 1조 미만
+  smallcap_max: 0.30             #   합산 30% 이하
+
+regime:
+  k: 2
+  model: gjrGARCH
+  dist: std
+  n_seeds: 5
+  a_full: 0.4                    # p_turb ≤ 0.4 → a = 1
+  a_zero: 0.6                    # p_turb ≥ 0.6 → a = 0
+  trend_filter: false            # 시장이 trend_ma일 이동평균 위면 브레이크 해제 (a = 1). 2018-23 검증에서 악화 → 기각
+  trend_ma: 200
+
+momentum:
+  method: residual               # residual | rel61 | slope_r2
+  beta_window: 252
+  lookback: 126
+  skip: 21
+  stock_lookback: 126
+  stock_skip: 21
+  vol_window: 60
+
+allocate:
+  top_k: 3
+  it_cap: null                   # 예: 0.50 (기본 비활성)
+  max_stocks_per_sector: 5
+  satellite_weight: 0.1          # 코어-위성: 위성(모멘텀 집중) 고정 비중. null이면 SPEC 레짐 혼합(a = f(p_turb))
+  core_hold_weeks: 13            # 코어 갱신 주기(주). rolling이면 매주 1/13씩 목표로 이동, block이면 13주마다 일괄 갱신. null이면 매주 전체 리밸런싱
+  core_mode: rolling
+  min_position: 0.005            # rolling에서 목표 밖 잔량이 NAV의 0.5% 미만이면 전량 매도
+  satellite_score: attack        # attack(6-1 모멘텀+ROE) | defensive(저변동+ROE)
+  anchor: null                   # market: 강제 편입(core) 종목은 시장 시총 비중으로 고정, 나머지만 선별 동일가중
+  min_weight: 0.005              # 전체 포트폴리오 기준 최소 편입 비중 (섹터·종목). 예: 0.005
+  noncore_cap: 0.05              # 강제 편입(삼성·하이닉스) 외 종목의 전체 기준 상한. 예: 0.05
+  noncore_mode: overflow         # overflow: 넘치는 비중을 같은 섹터 강제 편입 종목으로 | spread: 종목 수를 늘려 분산
+  intra_weight: equal            # equal | half_cap(동일가중 50% + 시총가중 50%)
+  stock_score: blend             # blend(SPEC: a로 공격·방어 혼합) | defensive(항상 저변동+ROE)
+  buffer_mult: 2.0               # 보유 종목은 섹터 내 2n위 안이면 유지 (null = 버퍼 없음)
+  core: {정보기술: [A005930, A000660]}
+
+backtest:
+  start: 2018-01-01
+  end: 2026-09-30
+  signal_weekday: 1              # 화요일 신호
+  trade_weekday: 2               # 수요일 체결
+  commission: 0.00015            # 편도 수수료
+  slippage: 0.00135              # 편도 슬리피지
+  sell_tax: 0.0020               # 매도세 (매도에만)
+  # 매수 0.15%, 매도 0.35% → 편도 평균 0.25%
+  delist_mode: last_price        # last_price | minus100
+  turnover_target: 0.06          # 보충 목표 (규정 하한 5% + 1%p 여유)
+  turnover_min: 0.05
