@@ -4,15 +4,17 @@
 * **핵심 로직:** 코어 90% / 위성 10% 섹터 로테이션. 코어는 시장 섹터 비중을 따르면서 섹터 안에서 저변동성 + ROE 상위 종목을 선택(매주 1/13씩 순환 갱신), 위성은 잔차 모멘텀 상위 섹터의 6-1 모멘텀 + ROE 상위 종목을 매주 회전. 삼성전자·SK하이닉스는 항상 편입, 그 외 종목은 5% 상한. 원래 가설(섹터 모멘텀 + MS-GARCH 레짐 브레이크)을 미래참조 없는 워크포워드 백테스트로 검증한 뒤 수정한 전략이며, MS-GARCH는 위험 모니터링용으로만 사용.
 * **백테스트 (2018-01 ~ 2026-09, 비용 차감):** 연 11.4% / 샤프 0.58 / MDD −42.4% (시장 11.5% / 0.55 / −45.0%), 대회 한도 위반 0주
 * **카페 링크:** [[18기 전략 보고서] 섹터 중립과 모멘텀을 활용한 코어-위성 전략](https://cafe.naver.com/f-e/cafes/29307656/articles/1113?menuid=55&referrerAllArticles=false)
+
 ## 파일 설명
-* `strategy_details.md` : 전략·대회 규칙·백테스트 결과·미래참조 방지 방법·실행 방법 상세 설명
+* `01_build_data.py` : DataGuide 원본 CSV를 파싱해 종목 필터·섹터 매핑 후 패널 데이터로 저장
+* `02_run_backtest.py` : MS-GARCH 워크포워드 추정 → 주간 백테스트(전략 + 비교군) → 성과표·그래프 생성
+* `03_test_lookahead.py` : 미래참조 테스트 (신호일 이후 데이터를 바꿔도 신호·비중이 변하지 않는지 확인)
+* `backtest.py` : 주간 리밸런싱 시뮬레이션 (화요일 신호 → 수요일 체결, 거래비용·상장폐지·거래정지 처리)
+* `allocate.py` : 섹터·종목 배분, 한도 조정, 대회 규칙(종목·섹터·소형주 한도, 회전율) 점검
+* `signals.py` : 매수 가능 종목, 섹터 수익률, 모멘텀·변동성·ROE 지표
+* `regime.py`, `regime_msgarch.r` : 2-레짐 MS-GJR-GARCH 추정·필터링 (R, MSGARCH 패키지)
+* `data_io.py` : 설정 로드, DataGuide CSV 파서
+* `report.py` : 성과 지표, 40거래일 구간 분석, 그래프
 * `config.yaml` : 모든 파라미터 (한도, 비용, 코어/위성 비중 등)
-* `src/backtest.py` : 주간 리밸런싱 시뮬레이션 (백테스트·실전 공용 매매 로직)
-* `src/allocate.py`, `src/rules.py` : 섹터·종목 배분과 대회 규칙(종목·섹터·소형주 한도, 회전율) 점검
-* `src/universe.py`, `src/sectors.py`, `src/momentum.py` : 매수 가능 종목, 섹터 수익률, 모멘텀·변동성·ROE 지표
-* `src/regime.py`, `src/regime_msgarch.r` : 2-레짐 MS-GJR-GARCH 워크포워드 추정 (R)
-* `scripts/build_data.py`, `scripts/run_backtest.py` : 데이터 구축과 백테스트 실행
-* `scripts/update_data.py`, `scripts/run_live.py`, `weekly.py` : 대회 기간 주간 데이터 갱신과 주문표 생성
-* `tests/test_lookahead.py` : 미래참조 테스트
-* `docs/images/` : 결과 그래프
-* 데이터(DataGuide)는 저작권 문제로 포함하지 않음 — 받는 항목은 `dataguide_checklist.md` 참고
+* 데이터(DataGuide)는 저작권 문제로 포함하지 않음
+
